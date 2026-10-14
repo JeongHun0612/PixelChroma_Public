@@ -6,16 +6,18 @@
 
 **Steam 스토어 공개 · 2026년 4분기 출시 예정**
 
-개발자 4인 팀에서 페인트 동기화, 위장 엠보싱, 다국어 폰트 파이프라인, 매칭·로비와 네트워크 문제 해결을 담당했습니다.
+개발자 4인 팀에서 픽셀 페인트 동기화, 위장 엠보싱, 다국어 폰트 파이프라인과 Steam 매칭·로비 시스템을 구현했습니다.
 
-- <img src="media/icons/globe.svg" width="20" height="20" alt="웹"> [프로젝트 상세 포트폴리오](https://junghun-portfolio-rouge.vercel.app/projects/pixel-chroma)
 - <img src="media/icons/steam.png" width="20" height="20" alt="Steam"> [Steam 스토어](https://store.steampowered.com/app/5023800/)
-- <img src="media/icons/pdf.svg" width="20" height="20" alt="PDF"> [상세 포트폴리오 PDF](media/portfolio.pdf)
+- <img src="media/icons/pdf.svg" width="20" height="20" alt="PDF"> [상세 기술 포트폴리오 (PDF)](media/portfolio.pdf)
 - <img src="media/icons/youtube.svg" width="20" height="20" alt="YouTube"> [플레이·구현 시연 영상](https://youtu.be/36jhe7z0E9g)
 
-| 러너 · 색칠해서 숨기 | 시커 · 물총으로 수색하기 |
-|:---:|:---:|
-| <img src="media/runner-camouflage.gif" width="460" alt="러너가 몸을 나무색으로 칠해 배경 속으로 위장하는 실제 플레이"> | <img src="media/seeker-search.gif" width="460" alt="시커가 맵을 이동하며 물총으로 도망자를 수색하는 실제 플레이"> |
+<p align="center">
+  <img src="media/runner-camouflage.gif" width="48%" alt="러너 · 몸을 나무색으로 칠해 배경 속으로 위장하는 실제 플레이">
+  <img src="media/seeker-search.gif" width="48%" alt="시커 · 맵을 이동하며 물총으로 도망자를 수색하는 실제 플레이">
+</p>
+
+왼쪽은 **러너의 색칠 위장**, 오른쪽은 **시커의 물총 수색** 플레이입니다.
 
 ## 프로젝트 정보
 
@@ -23,7 +25,7 @@
 |---|---|
 | 개발 기간 | 2026.06 ~ 2026.09, 3개월 |
 | 팀 구성 | 4인, 개발자 4명 |
-| 담당 역할 | 페인트 동기화 · 위장 엠보싱 · 다국어 · 매칭/로비 · 네트워크 문제 해결 |
+| 담당 역할 | 픽셀 페인트 동기화 · 위장 엠보싱 · 다국어 폰트 파이프라인 · Steam 매칭/로비 |
 | 엔진 · 언어 | Unity 6 · URP 2D · C# |
 | 플랫폼 | Windows PC / Steam |
 | 주요 기술 | Mirror, FizzySteamworks, Steamworks.NET, UniTask, Addressables, Unity Localization |
@@ -47,7 +49,11 @@
 
 마스크 전체 대신 좌표·색·브러시 크기만 전송하고, 받는 쪽에서 같은 색칠 연산을 수행합니다.
 
-대표 코드: [PlayerPaintCanvas](Scripts/Player/Common/PlayerPaintCanvas.cs) · [PlayerPaintCanvas.History](Scripts/Player/Common/PlayerPaintCanvas.History.cs)
+<img src="media/latejoin-paint-snapshot.gif" width="960" alt="Host가 먼저 칠한 무늬를 늦게 입장한 Client가 복원하고 이후 색칠도 실시간으로 동기화하는 시연">
+
+늦게 입장한 Client는 호스트에 현재 페인트 상태를 요청해, 입장 전에 칠해 둔 픽셀을 복원합니다. 이후의 색칠도 양쪽 화면에 동일하게 반영됩니다.
+
+대표 코드: [PlayerPaintCanvas](Scripts/Player/Common/PlayerPaintCanvas.cs) · [PlayerPaintCanvas.History](Scripts/Player/Common/PlayerPaintCanvas.History.cs) · [PlayerBase](Scripts/Player/Common/PlayerBase.cs)
 
 ### 2. 위장 밸런스를 위한 외곽선 엠보싱
 
@@ -59,21 +65,24 @@
 
 대표 코드: [PaintEmboss](Scripts/Player/Common/PaintEmboss.cs) · [UIEmbossPreview](Scripts/UI/Panels/Popup/UIRoomSetting/UIEmbossPreview.cs)
 
-### 3. 매칭·로비와 네트워크 문제 해결
+### 3. Steam 매칭·로비와 네트워크 구조
 
-Steam 로비 생성·입장, 방 목록 검색과 빠른 매칭 흐름을 구현했습니다. 접속 시점과 씬 전환, 비동기 대기가 겹치는 상황에서 발생한 문제는 아래와 같이 처리했습니다.
+Steam 로비 생성·입장, 방 목록 검색과 빠른 매칭 흐름을 구현했습니다. Steam 로비에 방 정보와 호스트 Steam ID를 등록하고, 입장한 클라이언트가 이 ID로 Mirror의 FizzySteamworks 전송 계층을 통해 호스트에 연결하도록 구성했습니다.
 
-| 문제 | 대응 | 대표 코드 |
-|---|---|---|
-| 늦게 입장한 클라이언트에 기존 색칠이 반영되지 않음 | 입장 시 호스트에 현재 상태를 요청하고, 칠해진 칸의 스냅샷을 요청자에게 전송 | [PlayerBase](Scripts/Player/Common/PlayerBase.cs) · [PlayerPaintCanvas](Scripts/Player/Common/PlayerPaintCanvas.cs) |
-| 게임 종료 후 씬 전환에서 파괴된 플레이어의 이벤트 구독이 남아 연결이 끊김 | `OnDestroy`에서도 구독을 해제하고, 파괴된 객체에 대한 방어 처리 추가 | [PlayerBase](Scripts/Player/Common/PlayerBase.cs) · [RunnerPlayer](Scripts/Player/Runner/RunnerPlayer.cs) |
-| 입장 중 방이 사라지면 타이틀 복귀 후 로딩이 다시 표시됨 | 연결이 끊기면 플레이어 생성 대기를 종료하고, 연결이 살아 있을 때만 타임아웃 복귀 처리 | [GameManager](Scripts/Core/GameManager.cs) |
+```mermaid
+flowchart TB
+    create["방 만들기"] --> metadata["Steam 로비 생성<br/>방 정보 등록<br/>호스트 Steam ID 등록"]
+    metadata --> host["Mirror 호스트 시작"]
+    search["방 목록에서 선택<br/>또는 빠른 매칭"] --> join["Steam 로비 입장"]
+    join --> address["로비에서<br/>호스트 Steam ID 확인"]
+    host --> connect["Mirror + FizzySteamworks<br/>호스트 · 클라이언트 연결"]
+    address --> connect
+    connect --> lobby["로비 플레이어 생성<br/>준비 상태 · 방 옵션 동기화"]
+```
 
-<img src="media/latejoin-paint-snapshot.gif" width="960" alt="Host가 먼저 칠한 무늬를 늦게 입장한 Client가 복원하고 이후 색칠도 실시간으로 동기화하는 시연">
+빠른 매칭은 가까운 거리·같은 언어부터 검색하고, 조건에 맞는 방이 없으면 거리 범위를 넓히고 언어 조건을 완화합니다.
 
-Host가 먼저 무늬를 칠한 뒤 Client가 입장합니다. 입장 전에 칠해 둔 무늬가 새 Client 화면에 복원되고, 입장 이후의 색칠도 양쪽에 동일하게 반영됩니다.
-
-대표 코드: [LobbyManager](Scripts/Core/Lobby/LobbyManager.cs) · [QuickMatchSearcher](Scripts/Core/Lobby/QuickMatch/QuickMatchSearcher.cs)
+대표 코드: [LobbyManager](Scripts/Core/Lobby/LobbyManager.cs) · [RoomListSearcher](Scripts/Core/Lobby/RoomList/RoomListSearcher.cs) · [QuickMatchSearcher](Scripts/Core/Lobby/QuickMatch/QuickMatchSearcher.cs) · [ChromaNetworkManager](Scripts/Network/ChromaNetworkManager.cs) · [LobbyPlayerState](Scripts/Player/Lobby/LobbyPlayerState.cs)
 
 ### 4. 13개 언어 폰트 파이프라인과 제작 도구
 
