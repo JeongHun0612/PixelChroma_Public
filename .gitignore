@@ -1,0 +1,13 @@
+# Public package: keep local/editor/system files out of the published repository.
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.log
+__pycache__/
+.env
+.env.*
+*.keystore
+*.jks
+*.p12
+*.pem
